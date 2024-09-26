@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../prisma/client";
 
+interface OrderRequestBody {
+  filterOption: "name" | "email" | "id";
+  order: "asc" | "desc"; // Prisma expects either "asc" or "desc" for sorting
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { filterOption, order } = await request.json();
+    const { filterOption, order }: OrderRequestBody = await request.json();
     let orderedByClause = {};
 
     if (filterOption == "name") {
