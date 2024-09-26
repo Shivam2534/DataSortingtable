@@ -1,4 +1,4 @@
-// import prisma from "../../../../prisma/client";
+import prisma from "../../../../prisma/client";
 
 // export async function POST() {
 //   console.log("Request is here");
@@ -24,28 +24,28 @@
 //   }
 // }
 
-// export async function GET() {
-//   try {
-//     const users = await prisma.user.findMany();
-//     let columnAttributes = Object.keys(users[0]);
+export async function GET() {
+  try {
+    const users = await prisma.user.findMany();
+    const columnAttributes = Object.keys(users[0]);
 
-//     return Response.json({
-//       message: "All users are fetched successfully",
-//       columnAttributes: columnAttributes,
-//       data: users,
-//       success: true,
-//       status: 200,
-//     });
-//   } catch (error) {
-//     console.log(error);
+    return Response.json({
+      message: "All users are fetched successfully",
+      columnAttributes: columnAttributes,
+      data: users,
+      success: true,
+      status: 200,
+    });
+  } catch (error) {
+    console.log(error);
 
-//     return Response.json({
-//       message: "We are unable to fetch data",
-//       success: false,
-//       status: 500,
-//     });
-//   }
-// }
+    return Response.json({
+      message: "We are unable to fetch data",
+      success: false,
+      status: 500,
+    });
+  }
+}
 
 // export async function PUT() {
 //   try {
