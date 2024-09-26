@@ -18,9 +18,9 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [Msg, setMsg] = useState("");
   const [searchColumn, setSearchColumn] = useState("name");
-  const [columnAttribute, setcolumnAttribute] = useState([]);
+  const [columnAttribute, setcolumnAttribute] = useState<string[]>([]);
   const [IsFilterOpen, setIsFilterOpen] = useState(false);
-  const [hoveredColumn, setHoveredColumn] = useState(null); // in a filter box
+  const [hoveredColumn, setHoveredColumn] = useState<string | null>(null); // in a filter box
 
   const findAllUsersFromDB = async () => {
     try {
