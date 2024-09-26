@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "../../../../prisma/client";
+// import prisma from "../../../../prisma/client";
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient()
 
 interface OrderRequestBody {
   filterOption: "name" | "email" | "id";
