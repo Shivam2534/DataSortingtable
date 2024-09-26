@@ -16,7 +16,7 @@ export async function POST() {
       data: res,
       success: true,
     });
-  } catch (error: any) {
+  } catch (error) {
     return Response.json({
       message: error.message,
       success: false,
