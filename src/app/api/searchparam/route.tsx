@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("Request is at search item function");
 
-    const columnAttributes = await prisma.user.findFirst();
+    let columnAttributes = await prisma.user.findFirst();
     columnAttributes = Object.keys(columnAttributes);
 
     console.log("All columns in a table-", columnAttributes);
