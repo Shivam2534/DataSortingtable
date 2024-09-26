@@ -1,18 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../prisma/client";
 
+interface whereClause {
+  name?: { contains: string; mode: "insensitive" };
+  email?: { contains: string; mode: "insensitive" };
+  id?: number;
+}
+
+interface SearchRequestBody {
+  searchItem: string;
+  SearchColumn: "name" | "email" | "id"; // Restricting to known column values
+}
+
 export async function POST(request: NextRequest) {
   try {
-    console.log("Request is at search item function");
+    // console.log("Request is at search item function");
 
-    let columnAttributes = await prisma.user.findFirst();
-    columnAttributes = Object.keys(columnAttributes);
+    const columnAttributes = await prisma.user.findFirst();
+    if (!columnAttributes) {
+      return NextResponse.json(
+        {
+          message: "No data found",
+          success: false,
+        },
+        { status: 404 }
+      );
+    }
+    const attributes = Object.keys(columnAttributes);
 
-    console.log("All columns in a table-", columnAttributes);
-    const { searchItem, SearchColumn } = await request.json();
-    console.log(SearchColumn);
+    // console.log("All columns in a table-", columnAttributes);
+    const { searchItem, SearchColumn }: SearchRequestBody =
+      await request.json();
 
-    const whereClause = {};
+    const whereClause: whereClause = {};
     if (SearchColumn === "name") {
       whereClause.name = {
         contains: searchItem,
@@ -24,10 +44,18 @@ export async function POST(request: NextRequest) {
         mode: "insensitive",
       };
     } else if (SearchColumn === "id") {
-      whereClause.id = {
-        contains: searchItem,
-        mode: "insensitive",
-      };
+      const searchId = parseInt(searchItem, 10);
+      if (!isNaN(searchId)) {
+        whereClause.id = searchId;
+      } else {
+        return NextResponse.json(
+          {
+            message: "Invalid ID format",
+            success: false,
+          },
+          { status: 400 }
+        );
+      }
     }
     const userDataAfterSearch = await prisma.user.findMany({
       where: whereClause,
@@ -37,7 +65,7 @@ export async function POST(request: NextRequest) {
       {
         message: "Data found successfully",
         data: userDataAfterSearch,
-        columnAttributes: columnAttributes,
+        columnAttributes: attributes,
         success: true,
       },
       { status: 200 }
