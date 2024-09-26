@@ -25,7 +25,9 @@ export default function Home() {
   const findAllUsersFromDB = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/userdata");
+      const response = await axios.get(
+        "/api/userdata"
+      );
       if (response.data.success) {
         setAllUsers(response.data.data);
         setFilteredUsers(response.data.data);

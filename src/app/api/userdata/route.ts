@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import prisma from "../../../../prisma/client";
 
 // export async function POST() {
@@ -29,7 +30,7 @@ export async function GET() {
     const users = await prisma.user.findMany();
     const columnAttributes = Object.keys(users[0]);
 
-    return Response.json({
+    return NextResponse.json({
       message: "All users are fetched successfully",
       columnAttributes: columnAttributes,
       data: users,
@@ -39,7 +40,7 @@ export async function GET() {
   } catch (error) {
     console.log(error);
 
-    return Response.json({
+    return NextResponse.json({
       message: "We are unable to fetch data",
       success: false,
       status: 500,
