@@ -63,7 +63,7 @@ export default function Home() {
           console.error("Error searching users:", error);
           setFilteredUsers([]);
         }
-      }, 300),
+      }, 100),
     [allUsers, searchColumn]
   );
 
