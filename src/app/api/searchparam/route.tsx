@@ -5,14 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     console.log("Request is at search item function");
 
-    let columnAttributes = await prisma.user.findFirst();
+    const columnAttributes = await prisma.user.findFirst();
     columnAttributes = Object.keys(columnAttributes);
 
     console.log("All columns in a table-", columnAttributes);
     const { searchItem, SearchColumn } = await request.json();
     console.log(SearchColumn);
 
-    const whereClause: any = {};
+    const whereClause = {};
     if (SearchColumn === "name") {
       whereClause.name = {
         contains: searchItem,
@@ -53,5 +53,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
