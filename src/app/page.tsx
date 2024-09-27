@@ -1,9 +1,17 @@
 "use client";
 
 import axios from "axios";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import debounce from "lodash.debounce";
-import { Search, Filter, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Delete,
+} from "lucide-react";
+import { toast } from "react-toastify";
 
 interface UserType {
   id: number;
@@ -13,38 +21,39 @@ interface UserType {
 
 export default function Home() {
   const [searchItem, setSearchItem] = useState("");
-  const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  // const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [Msg, setMsg] = useState("");
+  const [msg, setMsg] = useState("");
   const [searchColumn, setSearchColumn] = useState("name");
-  const [columnAttribute, setcolumnAttribute] = useState<string[]>([]);
-  const [IsFilterOpen, setIsFilterOpen] = useState(false);
-  const [hoveredColumn, setHoveredColumn] = useState<string | null>(null); // in a filter box
+  const [columnAttribute, setColumnAttribute] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
 
-  const findAllUsersFromDB = async () => {
+  const findAllUsersFromDB = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(
-        "/api/userdata"
-      );
-      if (response.data.success) {
-        setAllUsers(response.data.data);
-        setFilteredUsers(response.data.data);
-        setcolumnAttribute(response.data.columnAttributes);
+      const { data } = await axios.get("/api/userdata");
+      if (data.success) {
+        // setAllUsers(data.data);
+        setFilteredUsers(data.data);
+        setColumnAttribute(data.columnAttributes);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const debouncedSearch = useMemo(
     () =>
       debounce(async (query: string) => {
+        setMsg("");
         if (!query) {
-          setFilteredUsers(allUsers);
+          // setFilteredUsers(allUsers);
+          // setFilteredUsers(filteredUsers);
+          findAllUsersFromDB();
           return;
         }
 
@@ -54,44 +63,67 @@ export default function Home() {
             SearchColumn: searchColumn,
           });
           setFilteredUsers(res.data.data);
-          setcolumnAttribute(res.data.columnAttributes);
-          // console.log(res.data.columnAttributes);
-          if (res.data.data.length == 0) {
-            setMsg("Data not found");
-          }
+          setColumnAttribute(res.data.columnAttributes);
+          setMsg(res.data.data.length === 0 ? "Data not found" : "");
         } catch (error) {
           console.error("Error searching users:", error);
           setFilteredUsers([]);
+          setMsg("Data not found");
         }
-      }, 100),
-    [allUsers, searchColumn]
+      }, 500),
+    [searchColumn, findAllUsersFromDB]
   );
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchItem(query);
-    debouncedSearch(query);
-    setMsg("");
-  };
+  const handleSearch = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const query = e.target.value;
+      setSearchItem(query);
+      debouncedSearch(query);
+    },
+    [debouncedSearch, setSearchItem]
+  );
 
-  const handleColumnSelectionFilter = (column: string) => {
-    setSearchColumn(column);
-    debouncedSearch(searchItem);
-  };
+  const handleColumnSelectionFilter = useCallback(
+    (column: string) => {
+      setSearchColumn(column);
+      debouncedSearch(searchItem);
+    },
+    [debouncedSearch, searchItem]
+  );
 
-  const handleSort = async (filter: string, order: string) => {
-    try {
-      const res = await axios.post("/api/filterData", {
-        filterOption: filter,
-        order: order,
-      });
-      setFilteredUsers(res.data.OrderedUsers);
-    } catch (error) {
-      console.log("Not able to filter data", error);
-    } finally {
-      setIsFilterOpen(false);
-    }
-  };
+  const handleSort = useCallback(
+    async (filter: string, order: string) => {
+      try {
+        setIsFilterOpen(false);
+        const { data } = await axios.post("/api/filterData", {
+          filterOption: filter,
+          order: order,
+        });
+
+        setFilteredUsers(data.OrderedUsers);
+      } catch (error) {
+        console.error("Error sorting data", error);
+      }
+    },
+    [setFilteredUsers]
+  );
+
+  const deleteThisData = useCallback(
+    async (id: number) => {
+      try {
+        const res = await axios.delete("/api/userdata", {
+          data: { dataId: id },
+        });
+        if (res.data.success) {
+          findAllUsersFromDB();
+          toast.success("Record deleted successfully!");
+        }
+      } catch (error) {
+        console.error("Error deleting data", error);
+      }
+    },
+    [findAllUsersFromDB]
+  );
 
   useEffect(() => {
     findAllUsersFromDB();
@@ -112,23 +144,23 @@ export default function Home() {
             />
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
-          <div className="relative flex items-center gap-4">
+          <div className="relative items-center gap-4 ">
             <button
               type="button"
-              onClick={() => setIsFilterOpen(!IsFilterOpen)}
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out"
             >
               <Filter className="h-5 w-5" />
-              Filter & Sort
+              <p className="hidden sm:block">Filter & Sort</p>
               <ChevronDown
                 className={`h-4 w-4 transition-transform ${
-                  IsFilterOpen ? "rotate-180" : "rotate-0"
+                  isFilterOpen ? "rotate-180" : "rotate-0"
                 }`}
               />
             </button>
 
-            {IsFilterOpen && (
-              <div className="absolute mt-44 border border-gray-200 rounded-lg shadow-lg right-0 z-10 w-40 bg-white flex flex-col justify-center items-start p-3">
+            {isFilterOpen && (
+              <div className="absolute mt-2 border border-gray-200 rounded-lg shadow-lg right-0 z-10 w-40 bg-white flex flex-col justify-center items-start p-3">
                 {columnAttribute.map((column) => (
                   <div
                     key={column}
@@ -170,23 +202,24 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          {columnAttribute.map((column, ind) =>
-            ind != 0 ? (
-              <button
-                type="button"
-                key={ind}
-                onClick={() => handleColumnSelectionFilter(column)}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                  searchColumn === column
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                {column.charAt(0).toUpperCase() + column.slice(1)}
-              </button>
-            ) : null
-          )}
+        <div className="flex gap-2 sm:gap-4 items-center p-1 ">
+          <div className=" hidden sm:block text-xl font-semibold text-gray-800">
+            🔍 Select the Column to Discover:
+          </div>
+          {columnAttribute.map((column, ind) => (
+            <button
+              type="button"
+              key={ind}
+              onClick={() => handleColumnSelectionFilter(column)}
+              className={`px-4 py-2 text-sm font-medium rounded-full border-2 transition-all duration-300 ease-in-out transform hover:scale-105 ${
+                searchColumn === column
+                  ? " bg-blue-500 text-white shadow-md"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              {column.charAt(0).toUpperCase() + column.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -198,38 +231,48 @@ export default function Home() {
         <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="min-w-full">
             <thead>
-              <tr className="bg-gray-200 border-b border-gray-300">
+              <tr className="bg-gray-200 border-b border-gray-300 text-black">
                 {columnAttribute.map((columnHead, index) => (
                   <th
                     key={index}
-                    className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
+                    className="py-2 px-4 text-left text-gray-800 font-semibold"
                   >
-                    {columnHead}
+                    {columnHead.charAt(0).toUpperCase() +
+                      columnHead.slice(1).toLowerCase()}
                   </th>
                 ))}
+                <th className="py-2 px-4 text-left text-gray-800 font-semibold">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white w-full">
-              {filteredUsers.map((user: UserType) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-gray-50 border-b border-gray-200"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {user.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {user.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {user.email}
+            <tbody className="text-black">
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="border-b">
+                  {Object.values(user).map((value, i) => (
+                    <td key={i} className="py-2 px-4">
+                      {value}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4">
+                    <button
+                      type="button"
+                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg"
+                      onClick={() => deleteThisData(user.id)}
+                    >
+                      <Delete className="h-4 w-4 inline-block" />
+                      {}
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-
-          <div className="flex justify-center text-blue-400">{Msg}</div>
+        </div>
+      )}
+      {msg && (
+        <div className="mt-4 text-center text-red-500 text-lg font-semibold">
+          {msg}
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../prisma/client";
 // import { PrismaClient } from "@prisma/client";
 
@@ -78,27 +78,31 @@ export async function GET() {
 //   }
 // }
 
-// export async function DELETE() {
-//   try {
-//     const deleteUser = await prisma.user.delete({
-//       where: {
-//         email: "shivam11@gmail.com",
-//       },
-//     });
+export async function DELETE(request: NextRequest) {
+  try {
+    const { dataId } = await request.json();
+    console.log(dataId);
+    const idd = parseInt(dataId);
+    console.log(idd);
 
-//     return Response.json({
-//       message: "We have Deleted your data",
-//       success: true,
-//       status: 200,
-//       data: deleteUser,
-//     });
-//   } catch (error) {
-//     console.log(error);
+    await prisma.user.delete({
+      where: {
+        id: idd,
+      },
+    });
 
-//     return Response.json({
-//       message: "We are unable to delete data",
-//       success: false,
-//       status: 500,
-//     });
-//   }
-// }
+    return NextResponse.json({
+      message: "Data deleted successfully",
+      success: true,
+      status: 200,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return NextResponse.json({
+      message: "We are unable to delete data",
+      success: false,
+      status: 500,
+    });
+  }
+}
