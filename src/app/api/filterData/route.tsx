@@ -4,7 +4,7 @@ import prisma from "../../../../prisma/client";
 
 interface OrderRequestBody {
   filterOption: "name" | "email" | "id";
-  order: "asc" | "desc"; // Prisma expects either "asc" or "desc" for sorting
+  order: "asc" | "desc"; 
 }
 
 export async function POST(request: NextRequest) {

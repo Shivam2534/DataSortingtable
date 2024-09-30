@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../prisma/client";
-// import { PrismaClient } from "@prisma/client";
 
-// const prisma = new PrismaClient();
 
 // export async function POST() {
 //   console.log("Request is here");
@@ -81,9 +79,10 @@ export async function GET() {
 export async function DELETE(request: NextRequest) {
   try {
     const { dataId } = await request.json();
-    console.log(dataId);
+    // console.log(dataId);
+
     const idd = parseInt(dataId);
-    console.log(idd);
+    // console.log(idd);
 
     await prisma.user.delete({
       where: {

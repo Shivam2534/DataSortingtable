@@ -21,7 +21,6 @@ interface UserType {
 
 export default function Home() {
   const [searchItem, setSearchItem] = useState("");
-  // const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [msg, setMsg] = useState("");
@@ -30,30 +29,32 @@ export default function Home() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
 
-  const findAllUsersFromDB = useCallback(async () => {
+  const [lastFetchedData, setlastFetchedData] = useState<UserType[]>([]);
+
+  const findAllUsersFromDB = async () => {
     try {
       setIsLoading(true);
       const { data } = await axios.get("/api/userdata");
       if (data.success) {
-        // setAllUsers(data.data);
         setFilteredUsers(data.data);
         setColumnAttribute(data.columnAttributes);
+
+        setlastFetchedData(data.data);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
   const debouncedSearch = useMemo(
     () =>
       debounce(async (query: string) => {
         setMsg("");
         if (!query) {
-          // setFilteredUsers(allUsers);
-          // setFilteredUsers(filteredUsers);
-          findAllUsersFromDB();
+          // findAllUsersFromDB();
+          setFilteredUsers(lastFetchedData);
           return;
         }
 
@@ -62,6 +63,7 @@ export default function Home() {
             searchItem: query.trim(),
             SearchColumn: searchColumn,
           });
+
           setFilteredUsers(res.data.data);
           setColumnAttribute(res.data.columnAttributes);
           setMsg(res.data.data.length === 0 ? "Data not found" : "");
@@ -71,7 +73,7 @@ export default function Home() {
           setMsg("Data not found");
         }
       }, 500),
-    [searchColumn, findAllUsersFromDB]
+    [searchColumn, lastFetchedData]
   );
 
   const handleSearch = useCallback(
@@ -86,13 +88,14 @@ export default function Home() {
   const handleColumnSelectionFilter = useCallback(
     (column: string) => {
       setSearchColumn(column);
-      debouncedSearch(searchItem);
+      // debouncedSearch(searchItem);
     },
-    [debouncedSearch, searchItem]
+    [setSearchColumn]
   );
 
   const handleSort = useCallback(
     async (filter: string, order: string) => {
+      // filter on the basis of ID , Name , or Email
       try {
         setIsFilterOpen(false);
         const { data } = await axios.post("/api/filterData", {
@@ -108,22 +111,19 @@ export default function Home() {
     [setFilteredUsers]
   );
 
-  const deleteThisData = useCallback(
-    async (id: number) => {
-      try {
-        const res = await axios.delete("/api/userdata", {
-          data: { dataId: id },
-        });
-        if (res.data.success) {
-          findAllUsersFromDB();
-          toast.success("Record deleted successfully!");
-        }
-      } catch (error) {
-        console.error("Error deleting data", error);
+  const deleteThisData = useCallback(async (id: number) => {
+    try {
+      const res = await axios.delete("/api/userdata", {
+        data: { dataId: id },
+      });
+      if (res.data.success) {
+        findAllUsersFromDB();
+        toast.success("Record deleted successfully!");
       }
-    },
-    [findAllUsersFromDB]
-  );
+    } catch (error) {
+      console.error("Error deleting data", error);
+    }
+  }, []);
 
   useEffect(() => {
     findAllUsersFromDB();
@@ -132,6 +132,7 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">User Search</h1>
+
       <div className="mb-6 bg-white p-4 rounded-lg shadow-md flex flex-col gap-5">
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="relative flex-grow">
@@ -144,6 +145,7 @@ export default function Home() {
             />
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
+
           <div className="relative items-center gap-4 ">
             <button
               type="button"
@@ -246,6 +248,7 @@ export default function Home() {
                 </th>
               </tr>
             </thead>
+
             <tbody className="text-black">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="border-b">
@@ -270,7 +273,8 @@ export default function Home() {
           </table>
         </div>
       )}
-      {msg && (
+
+      {msg.length > 0 && (
         <div className="mt-4 text-center text-red-500 text-lg font-semibold">
           {msg}
         </div>

@@ -10,7 +10,7 @@ interface whereClause {
 
 interface SearchRequestBody {
   searchItem: string;
-  SearchColumn: "name" | "email" | "id"; // Restricting to known column values
+  SearchColumn: "name" | "email" | "id"; 
 }
 
 export async function POST(request: NextRequest) {
@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
     }
     const attributes = Object.keys(columnAttributes);
 
-    // console.log("All columns in a table-", columnAttributes);
     const { searchItem, SearchColumn }: SearchRequestBody =
       await request.json();
 
